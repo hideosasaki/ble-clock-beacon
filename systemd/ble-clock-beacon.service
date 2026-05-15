@@ -1,0 +1,19 @@
+[Unit]
+Description=BLE time beacon for ble-clock
+Documentation=https://github.com/sasaki/ble-clock-beacon
+After=bluetooth.service systemd-timesyncd.service
+Requires=bluetooth.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/ble-clock-beacon
+Restart=on-failure
+RestartSec=10
+# Tighten the service surface; only DBus and the BlueZ socket are needed.
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
