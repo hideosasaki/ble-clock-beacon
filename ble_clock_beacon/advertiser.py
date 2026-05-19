@@ -11,8 +11,11 @@ exported DBus object and its proxy to the manager are kept across cycles to
 avoid re-introspecting BlueZ on every tick.
 """
 
-from __future__ import annotations
-
+# NOTE: do NOT add `from __future__ import annotations` to this module.
+# The dbus-next `@method` / `@dbus_property` decorators read the literal
+# return annotation strings (e.g. "s", "as", "a{sv}") at class-creation
+# time as DBus signatures — not as Python type hints. PEP 563 turns those
+# into deferred strings and the decorator raises ValueError on import.
 import asyncio
 import logging
 
