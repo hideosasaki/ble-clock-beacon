@@ -64,6 +64,13 @@ class TimeAdvertisement(ServiceInterface):
     def MaxInterval(self) -> "u":  # noqa: F821, N802
         return ADV_INTERVAL_MS
 
+    # BlueZ reads TxPower on every advertise; returning 0 lets the
+    # controller pick. Omitting it logs a property-not-found error
+    # per transmit window.
+    @dbus_property(access=PropertyAccess.READ)
+    def TxPower(self) -> "n":  # noqa: F821, N802
+        return 0
+
     @method()
     def Release(self) -> None:  # noqa: N802
         logger.info("advertisement released by BlueZ")
