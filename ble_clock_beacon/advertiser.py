@@ -21,6 +21,7 @@ import logging
 
 from dbus_next import BusType, DBusError, Variant
 from dbus_next.aio import MessageBus, ProxyInterface
+from dbus_next.constants import PropertyAccess
 from dbus_next.service import ServiceInterface, dbus_property, method
 
 from .protocol import SERVICE_UUID
@@ -43,23 +44,23 @@ class TimeAdvertisement(ServiceInterface):
     def set_payload(self, payload: bytes) -> None:
         self._payload = payload
 
-    @dbus_property()
+    @dbus_property(access=PropertyAccess.READ)
     def Type(self) -> "s":  # noqa: F821, N802
         return "broadcast"
 
-    @dbus_property()
+    @dbus_property(access=PropertyAccess.READ)
     def ServiceUUIDs(self) -> "as":  # noqa: F821, N802
         return [SERVICE_UUID]
 
-    @dbus_property()
+    @dbus_property(access=PropertyAccess.READ)
     def ServiceData(self) -> "a{sv}":  # noqa: F821, N802
         return {SERVICE_UUID: Variant("ay", self._payload)}
 
-    @dbus_property()
+    @dbus_property(access=PropertyAccess.READ)
     def MinInterval(self) -> "u":  # noqa: F821, N802
         return ADV_INTERVAL_MS
 
-    @dbus_property()
+    @dbus_property(access=PropertyAccess.READ)
     def MaxInterval(self) -> "u":  # noqa: F821, N802
         return ADV_INTERVAL_MS
 

@@ -16,3 +16,11 @@ def test_advertiser_imports():
 
 def test_daemon_imports():
     import ble_clock_beacon.daemon  # noqa: F401
+
+
+def test_advertisement_instantiates():
+    # Catches class-creation-time failures dbus-next defers to __init__,
+    # e.g. properties missing a setter when access defaults to read-write.
+    from ble_clock_beacon.advertiser import TimeAdvertisement
+
+    TimeAdvertisement(b"\x00" * 5)
