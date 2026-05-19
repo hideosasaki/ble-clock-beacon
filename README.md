@@ -41,7 +41,9 @@ the radio is idle.
 
 - Linux with BlueZ ≥ 5.50 (Raspberry Pi OS Bookworm is fine)
 - Python ≥ 3.10
-- `systemd-timesyncd` (or any other NTP client that drives `timedatectl`)
+- An NTP client driving the kernel clock (`systemd-timesyncd`, `chrony`,
+  busybox `ntpd`, ...). Non-systemd hosts (e.g. OpenWrt) are supported
+  via an `adjtimex(2)` fallback in `ntp.py`.
 - User in the `bluetooth` group, or root
 
 ## Install
