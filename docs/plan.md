@@ -2,7 +2,7 @@
 
 ## 背景
 
-[ble-clock](https://github.com/sasaki/ble-clock) は ESP32 + ULP で動く単3電池1本/約2.7年動作の低電力アナログ時計。HH:00/15/30/45 に約 500ms のスキャンウィンドウだけ開いて、Pi 側から流れてくる時刻アドバタイズを受信し、針位置を補正する。
+[ble-clock](https://github.com/hideosasaki/ble-clock) は ESP32 + ULP で動く単3電池1本/約2.7年動作の低電力アナログ時計。HH:00/15/30/45 に約 500ms のスキャンウィンドウだけ開いて、Pi 側から流れてくる時刻アドバタイズを受信し、針位置を補正する。
 
 本リポジトリは Pi 側 (Raspberry Pi 4, Bookworm, BlueZ) で動く systemd デーモン。役割は単純で「NTP 同期された UTC 秒を、決められた時間帯にだけ BLE アドバタイズで撒く」だけ。
 
