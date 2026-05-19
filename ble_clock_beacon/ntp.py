@@ -13,12 +13,21 @@ Both signals are required from ``adjtimex``: the return code must not
 be ``TIME_ERROR`` *and* ``STA_UNSYNC`` must be cleared. Either check
 alone is too lenient — e.g. chrony clears ``STA_UNSYNC`` before fully
 converging.
+
+When ``BLE_BEACON_NTP_READY_FILE`` is set, the daemon ignores both
+probes above and just checks whether that file exists. This is the
+escape hatch for busybox ``ntpd`` (the default on OpenWrt), which
+*never* clears ``STA_UNSYNC`` even once the wall clock is correct —
+so the ``adjtimex`` path is unusable there. The host is expected to
+create the flag file from an ``/etc/hotplug.d/ntp/`` script on the
+first stratum/step event.
 """
 
 from __future__ import annotations
 
 import ctypes
 import logging
+import os
 import shutil
 import subprocess
 import time
@@ -27,6 +36,7 @@ logger = logging.getLogger(__name__)
 
 STA_UNSYNC = 0x0040
 TIME_ERROR = 5
+_FLAG_FILE_ENV = "BLE_BEACON_NTP_READY_FILE"
 
 
 class _Timex(ctypes.Structure):
@@ -105,6 +115,9 @@ def _check_adjtimex() -> bool:
 
 
 def is_ntp_synchronized() -> bool:
+    flag_path = os.environ.get(_FLAG_FILE_ENV)
+    if flag_path:
+        return os.path.exists(flag_path)
     if _TIMEDATECTL is not None:
         return _check_timedatectl()
     return _check_adjtimex()

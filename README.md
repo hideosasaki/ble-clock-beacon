@@ -43,7 +43,11 @@ the radio is idle.
 - Python ≥ 3.10
 - An NTP client driving the kernel clock (`systemd-timesyncd`, `chrony`,
   busybox `ntpd`, ...). Non-systemd hosts (e.g. OpenWrt) are supported
-  via an `adjtimex(2)` fallback in `ntp.py`.
+  via an `adjtimex(2)` fallback in `ntp.py`. Busybox `ntpd` never
+  clears `STA_UNSYNC`, so on OpenWrt set `BLE_BEACON_NTP_READY_FILE`
+  to a path that the system touches once NTP is in sync (e.g. from
+  `/etc/hotplug.d/ntp/30-ntp-synced` on `ACTION=stratum`); the daemon
+  will then block on that file instead of `timedatectl`/`adjtimex`.
 - User in the `bluetooth` group, or root
 
 ## Install

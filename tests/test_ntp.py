@@ -1,13 +1,15 @@
 """Tests for the NTP-sync probe.
 
-Two backends, exercised independently:
+Three probes, exercised through the public ``is_ntp_synchronized``
+dispatcher and (for the two backends) directly:
 
 - ``_check_timedatectl`` parses ``timedatectl show -p NTPSynchronized``
 - ``_check_adjtimex`` invokes the cached ``adjtimex(2)`` function pointer
   and reads the return code plus the ``STA_UNSYNC`` status bit
+- the ``BLE_BEACON_NTP_READY_FILE`` flag-file path, inlined in
+  ``is_ntp_synchronized``
 
-``is_ntp_synchronized`` dispatches on the cached ``_TIMEDATECTL`` path.
-Both backends and the dispatch are mocked so the suite runs on any host
+All probes and the dispatch are mocked so the suite runs on any host
 (incl. macOS, which has no ``adjtimex`` syscall).
 """
 
@@ -24,6 +26,7 @@ from ble_clock_beacon.ntp import (
     TIME_ERROR,
     _check_adjtimex,
     _check_timedatectl,
+    _FLAG_FILE_ENV,
     is_ntp_synchronized,
 )
 
@@ -35,6 +38,10 @@ def _fake_run(stdout: str):
         return result
 
     return _run
+
+
+def _forbid(name: str):
+    return lambda: pytest.fail(f"{name} must not be called in this dispatch path")
 
 
 def test_timedatectl_yes(monkeypatch):
@@ -96,23 +103,29 @@ def test_adjtimex_unavailable(monkeypatch):
     assert _check_adjtimex() is False
 
 
+@pytest.mark.parametrize("flag_exists, expected", [(True, True), (False, False)])
+def test_dispatch_flag_file_short_circuits(monkeypatch, tmp_path, flag_exists, expected):
+    flag = tmp_path / "ntp.synced"
+    if flag_exists:
+        flag.touch()
+    monkeypatch.setenv(_FLAG_FILE_ENV, str(flag))
+    monkeypatch.setattr(ntp, "_TIMEDATECTL", "/usr/bin/timedatectl")
+    monkeypatch.setattr(ntp, "_check_timedatectl", _forbid("timedatectl"))
+    monkeypatch.setattr(ntp, "_check_adjtimex", _forbid("adjtimex"))
+    assert is_ntp_synchronized() is expected
+
+
 def test_dispatch_uses_timedatectl_when_present(monkeypatch):
+    monkeypatch.delenv(_FLAG_FILE_ENV, raising=False)
     monkeypatch.setattr(ntp, "_TIMEDATECTL", "/usr/bin/timedatectl")
     monkeypatch.setattr(ntp, "_check_timedatectl", lambda: True)
-    monkeypatch.setattr(
-        ntp,
-        "_check_adjtimex",
-        lambda: pytest.fail("adjtimex must not be called when timedatectl is on PATH"),
-    )
+    monkeypatch.setattr(ntp, "_check_adjtimex", _forbid("adjtimex"))
     assert is_ntp_synchronized() is True
 
 
 def test_dispatch_falls_back_to_adjtimex(monkeypatch):
+    monkeypatch.delenv(_FLAG_FILE_ENV, raising=False)
     monkeypatch.setattr(ntp, "_TIMEDATECTL", None)
-    monkeypatch.setattr(
-        ntp,
-        "_check_timedatectl",
-        lambda: pytest.fail("timedatectl must not be called when not on PATH"),
-    )
+    monkeypatch.setattr(ntp, "_check_timedatectl", _forbid("timedatectl"))
     monkeypatch.setattr(ntp, "_check_adjtimex", lambda: True)
     assert is_ntp_synchronized() is True
