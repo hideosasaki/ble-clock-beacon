@@ -19,6 +19,16 @@ def test_active_property_is_writable():
     assert adv.Active is False
 
 
+def test_tx_power_property_is_writable():
+    # BlueZ writes back the negotiated TxPower once per second while a
+    # window is open; without a writable backing field dbus-next rejects
+    # the Set as "the property is readonly".
+    adv = TimeAdvertisement(b"\x00" * 5)
+    assert adv.TxPower == 0
+    adv.TxPower = -4
+    assert adv.TxPower == -4
+
+
 def test_service_data_reflects_payload():
     adv = TimeAdvertisement(build_payload(0xDEADBEEF))
     variants = adv.ServiceData

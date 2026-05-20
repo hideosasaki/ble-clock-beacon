@@ -48,6 +48,7 @@ class TimeAdvertisement(ServiceInterface):
         super().__init__("org.bluez.LEAdvertisement1")
         self._payload = payload
         self._active = False
+        self._tx_power = 0
 
     def set_payload(self, payload: bytes) -> None:
         self._payload = payload
@@ -76,11 +77,17 @@ class TimeAdvertisement(ServiceInterface):
         return ADV_INTERVAL_MS
 
     # BlueZ reads TxPower on every advertise; returning 0 lets the
-    # controller pick. Omitting it logs a property-not-found error
-    # per transmit window.
-    @dbus_property(access=PropertyAccess.READ)
+    # controller pick. It also writes back the negotiated TxPower once
+    # per second while a window is open, so the property must be
+    # writable or dbus-next rejects the Set as readonly.
+    @dbus_property(access=PropertyAccess.READWRITE)
     def TxPower(self) -> "n":  # noqa: F821, N802
-        return 0
+        return self._tx_power
+
+    @TxPower.setter  # type: ignore[no-redef]
+    def TxPower(self, value: "n") -> None:  # noqa: F821, N802
+        self._tx_power = int(value)
+        logger.debug("BlueZ set TxPower=%s", self._tx_power)
 
     @dbus_property(access=PropertyAccess.READWRITE)
     def Active(self) -> "b":  # noqa: F821, N802
