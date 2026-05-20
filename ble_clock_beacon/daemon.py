@@ -19,8 +19,9 @@ logger = logging.getLogger(__name__)
 
 NTP_WAIT_TIMEOUT_S = 300.0
 NTP_STABILIZE_DELAY_S = 30.0
-# Re-register at 1 Hz; the clock RTC is second-precision so finer updates
-# would only add DBus churn without improving sync accuracy.
+# Inside a transmit window we refresh ServiceData once per second via
+# PropertiesChanged; the advertising set itself is registered once at window
+# entry and unregistered at window exit.
 UPDATE_INTERVAL_S = 1.0
 IDLE_MAX_SLEEP_S = 1.0
 
@@ -61,6 +62,8 @@ async def run() -> int:
                 to_next_second = 1.0 - (now.timestamp() % 1.0)
                 remaining = (end - now).total_seconds()
                 await _sleep_or_stop(stop, min(to_next_second, remaining))
+                if not stop.is_set() and window_for(utc_now()) is None:
+                    await advertiser.stop()
             else:
                 await advertiser.stop()
                 await _sleep_or_stop(
