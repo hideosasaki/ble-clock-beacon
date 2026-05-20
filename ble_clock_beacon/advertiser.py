@@ -62,7 +62,17 @@ class TimeAdvertisement(ServiceInterface):
 
     @dbus_property(access=PropertyAccess.READ)
     def ServiceUUIDs(self) -> "as":  # noqa: F821, N802
-        return [SERVICE_UUID]
+        # Listing the UUID here makes BlueZ emit a "Complete 128-bit Service
+        # UUIDs" AD field (18 bytes) alongside the ServiceData (23 bytes) and
+        # Flags (3 bytes). The combined 44 bytes exceeds the 31-byte legacy
+        # advertising payload limit, which triggers BlueZ's automatic
+        # upgrade to extended advertising on 1M. On RTL8761BU controllers
+        # that upgrade path stops emitting RF entirely (HCI returns success
+        # but no advertisement is observed by independent receivers). The
+        # firmware identifies the broadcast from the Service Data UUID
+        # alone, so leave this empty to stay below the cap and keep BlueZ
+        # on the legacy code path.
+        return []
 
     @dbus_property(access=PropertyAccess.READ)
     def ServiceData(self) -> "a{sv}":  # noqa: F821, N802

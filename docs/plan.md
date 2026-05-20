@@ -77,7 +77,12 @@ BLE 非依存層 (`protocol`, `scheduler`) はピュア関数で `pytest` から
 `org.bluez.LEAdvertisingManager1` インターフェースに `LEAdvertisement1` 実装オブジェクトをエクスポートし、`RegisterAdvertisement` を呼ぶ。プロパティは以下:
 
 - `Type = "broadcast"`
-- `ServiceUUIDs = [SERVICE_UUID]`
+- `ServiceUUIDs = []` (空にする。UUID をここに含めると BlueZ が
+  Complete 128-bit Service UUIDs (18 byte) + ServiceData (23 byte) +
+  Flags (3 byte) で 31 byte の legacy 上限を超えたと判定して Extended
+  Advertising 経路に切り替える。Realtek RTL8761BU はその経路で HCI が
+  Success を返しても RF を放射しないので、独立した受信器 (Mac/iPhone/
+  ESP32) のいずれからも見えなくなる)
 - `ServiceData = { SERVICE_UUID: <5 byte payload> }`
 - `MinInterval = MaxInterval = 100` (ms)
 
